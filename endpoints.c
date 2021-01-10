@@ -80,31 +80,31 @@ void build_rsp(void)
 
     while(NULL != ep->handler)
     {
-        if (NULL == ep->core_attr) {
+        if (NULL == ep->core_attr) {//此处证明COAP_METHOD_PUT不需要在build_rsp处理
             ep++;
             continue;
         }
 
         if (0 < strlen(rsp)) {
-            strncat(rsp, ",", len);
-            len--;
+            strncat(rsp, ",", len);//用逗号分隔两个路径  </.well-known/core>;ct=40;,<light>;ct=0
+            len--;//留出","
         }
 
-        strncat(rsp, "<", len);
-        len--;
+        strncat(rsp, "<", len);//这里为什么要复制len这么多？回答：如果n大于字符串src的长度，那么仅将src全部追加到dest的尾部
+        len--;//"<"
 
-        for (i = 0; i < ep->path->count; i++) {
-            strncat(rsp, "/", len);
-            len--;
+        for (i = 0; i < ep->path->count; i++) {//path->count指式当前这个路径的深度
+            strncat(rsp, "/", len);//在rsp里面将path连接成  /xxx/yyy的样子
+            len--;//对应len缺少了"/"的个数
 
-            strncat(rsp, ep->path->elems[i], len);
+            strncat(rsp, ep->path->elems[i], len);//连接子目录
             len -= strlen(ep->path->elems[i]);
         }
 
-        strncat(rsp, ">;", len);
+        strncat(rsp, ">;", len);//在目录的最后加上">;"
         len -= 2;
 
-        strncat(rsp, ep->core_attr, len);
+        strncat(rsp, ep->core_attr, len);//连接最后的ct
         len -= strlen(ep->core_attr);
 
         ep++;

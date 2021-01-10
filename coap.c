@@ -38,16 +38,20 @@ void coap_dump(const uint8_t *buf, size_t buflen, bool bare)
     }
 }
 #endif
-
+/*
+    7 6 5 4 3 2 1 0 7 6 5 4 3 2 1 0 7 6 5 4 3 2 1 0 7 6 5 4 3 2 1 0
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Ver| T |  TKL  |      Code     |          Message ID           |
+*/
 int coap_parseHeader(coap_header_t *hdr, const uint8_t *buf, size_t buflen)
 {
     if (buflen < 4)
         return COAP_ERR_HEADER_TOO_SHORT;
     hdr->ver = (buf[0] & 0xC0) >> 6;
-    if (hdr->ver != 1)
+    if (hdr->ver != 1)//Ver必须是1，其他值保留
         return COAP_ERR_VERSION_NOT_1;
-    hdr->t = (buf[0] & 0x30) >> 4;
-    hdr->tkl = buf[0] & 0x0F;
+    hdr->t = (buf[0] & 0x30) >> 4;// Confirmable (0), Non-confirmable (1), Acknowledgement (2), or Reset (3). 
+    hdr->tkl = buf[0] & 0x0F;//指示可变长度Token字段的长度（0-8个字节）
     hdr->code = buf[1];
     hdr->id[0] = buf[2];
     hdr->id[1] = buf[3];
@@ -78,6 +82,31 @@ int coap_parseToken(coap_buffer_t *tokbuf, const coap_header_t *hdr, const uint8
     }
 }
 
+
+/*
+     0   1   2   3   4   5   6   7
+   +---------------+---------------+
+   |               |               |
+   |  Option Delta | Option Length |   1 byte
+   |               |               |
+   +---------------+---------------+
+   \                               \
+   /         Option Delta          /   0-2 bytes
+   \          (extended)           \
+   +-------------------------------+
+   \                               \
+   /         Option Length         /   0-2 bytes
+   \          (extended)           \
+   +-------------------------------+
+   \                               \
+   /                               /
+   \                               \
+   /         Option Value          /   0 or more bytes
+   \                               \
+   /                               /
+   \                               \
+   +-------------------------------+
+*/
 // advances p
 int coap_parseOption(coap_option_t *option, uint16_t *running_delta, const uint8_t **buf, size_t buflen)
 {
@@ -138,7 +167,7 @@ int coap_parseOption(coap_option_t *option, uint16_t *running_delta, const uint8
         return COAP_ERR_OPTION_TOO_BIG;
 
     //printf("option num=%d\n", delta + *running_delta);
-    option->num = delta + *running_delta;
+    option->num = delta + *running_delta;//这一次和前一次的delta值之和
     option->buf.p = p+1;
     option->buf.len = len;
     //coap_dump(p+1, len, false);
@@ -242,7 +271,7 @@ const coap_option_t *coap_findOptions(const coap_packet_t *pkt, uint8_t num, uin
         {
             if (NULL == first)
                 first = &pkt->opts[i];
-            (*count)++;
+            (*count)++;//当前路径的深度
         }
         else
         {
@@ -401,13 +430,13 @@ int coap_handle_req(coap_rw_buffer_t *scratch, const coap_packet_t *inpkt, coap_
 
     while(NULL != ep->handler)
     {
-        if (ep->method != inpkt->hdr.code)
+        if (ep->method != inpkt->hdr.code)//查找匹配的方法
             goto next;
-        if (NULL != (opt = coap_findOptions(inpkt, COAP_OPTION_URI_PATH, &count)))
+        if (NULL != (opt = coap_findOptions(inpkt, COAP_OPTION_URI_PATH, &count)))//查找资源路径
         {
-            if (count != ep->path->count)
+            if (count != ep->path->count)//当前路径深度是否匹配
                 goto next;
-            for (i=0;i<count;i++)
+            for (i=0;i<count;i++)//逐级比较路径名称
             {
                 if (opt[i].buf.len != strlen(ep->path->elems[i]))
                     goto next;

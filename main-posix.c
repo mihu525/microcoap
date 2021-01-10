@@ -38,6 +38,7 @@ int main(int argc, char **argv)
 #endif /* IPV6 */
     bind(fd,(struct sockaddr *)&servaddr, sizeof(servaddr));
 
+    //仅仅针对well-known
     endpoint_setup();
 
     while(1)
@@ -53,7 +54,7 @@ int main(int argc, char **argv)
         printf("\n");
 #endif
 
-        if (0 != (rc = coap_parse(&pkt, buf, n)))
+        if (0 != (rc = coap_parse(&pkt, buf, n)))//把buf里的内容解析出来填充到pkt  
             printf("Bad packet rc=%d\n", rc);
         else
         {

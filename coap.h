@@ -96,10 +96,10 @@ typedef enum
 #define MAKE_RSPCODE(clas, det) ((clas << 5) | (det))
 typedef enum
 {
-    COAP_RSPCODE_CONTENT = MAKE_RSPCODE(2, 5),
-    COAP_RSPCODE_NOT_FOUND = MAKE_RSPCODE(4, 4),
-    COAP_RSPCODE_BAD_REQUEST = MAKE_RSPCODE(4, 0),
-    COAP_RSPCODE_CHANGED = MAKE_RSPCODE(2, 4)
+    COAP_RSPCODE_CONTENT = MAKE_RSPCODE(2, 5),//Content。类似于HTTP 200 OK
+    COAP_RSPCODE_NOT_FOUND = MAKE_RSPCODE(4, 4),//服务器找不到资源
+    COAP_RSPCODE_BAD_REQUEST = MAKE_RSPCODE(4, 0),//请求错误，服务器无法处理
+    COAP_RSPCODE_CHANGED = MAKE_RSPCODE(2, 4)//响应但是没有内容
 } coap_responsecode_t;
 
 //http://tools.ietf.org/html/rfc7252#section-12.3
